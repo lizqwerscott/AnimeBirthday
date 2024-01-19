@@ -11,22 +11,22 @@ import (
 )
 
 type Birthday struct {
-	month int
-	day   int
+	Month int `json:"month"`
+	Day   int `json:"day"`
 }
 
 type AnimePerson struct {
-	name       string
-	url        string
-	birthday   Birthday
-	reputation int
+	Name       string   `json:"name"`
+	Url        string   `json:"url"`
+	Birthday   Birthday `json:"birthday"`
+	Reputation int      `json:"reputation"`
 }
 
 func PrintPersons(x []AnimePerson) {
 	fmt.Printf("len=%d cap=%d\n", len(x), cap(x))
 
 	for i, person := range x {
-		fmt.Printf("person(%d): %s %s %d\n", i, person.name, person.url, person.reputation)
+		fmt.Printf("person(%d): %s %s %d\n", i, person.Name, person.Url, person.Reputation)
 	}
 }
 
@@ -113,15 +113,15 @@ func GetAnimePersonBirthday(month, day int) []AnimePerson {
 	ch := make(chan int, len(persons))
 
 	for _, person := range persons {
-		go count_page_word_async(person.url, ch)
+		go count_page_word_async(person.Url, ch)
 	}
 
 	for i := range persons {
-		persons[i].reputation = <-ch
+		persons[i].Reputation = <-ch
 	}
 
 	sort.SliceStable(persons, func(i, j int) bool {
-		return persons[i].reputation > persons[j].reputation
+		return persons[i].Reputation > persons[j].Reputation
 	})
 
 	return persons
