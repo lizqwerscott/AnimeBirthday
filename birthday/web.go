@@ -8,19 +8,18 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	"time"
 )
 
 type Birthday struct {
-	Month int `json:"month"`
-	Day   int `json:"day"`
+	Month int `bson:"month" json:"month"`
+	Day   int `bson:"day" json:"day"`
 }
 
 type AnimePerson struct {
-	Name       string   `json:"name"`
-	Url        string   `json:"url"`
-	Birthday   Birthday `json:"birthday"`
-	Reputation int      `json:"reputation"`
+	Name       string   `bson:"name" json:"name"`
+	Url        string   `bson:"url" json:"url"`
+	Birthday   Birthday `bson:"birthday" json:"birthday"`
+	Reputation int      `bson:"reputation" json:"reputation"`
 }
 
 func PrintPersons(x []AnimePerson) {
@@ -97,19 +96,19 @@ func count_page_word(url string) (int, error) {
 }
 
 func count_page_word_async(url string, ch chan<- int, err_ch chan<- error) {
-	start := time.Now()
+	// start := time.Now()
 
 	count, err := count_page_word(url)
 
 	ch <- count
 	err_ch <- err
 
-	end := time.Now()
-	elapse := end.Sub(start)
-	log.Printf("count page Seconds: %f, (%s) \n", elapse.Seconds(), url)
+	// end := time.Now()
+	// elapse := end.Sub(start)
+	// log.Printf("count page Seconds: %f, (%s) \n", elapse.Seconds(), url)
 }
 
-func GetAnimePersonBirthday(month, day int) ([]AnimePerson, error) {
+func GetAnimePersonBirthdayFromWeb(month, day int) ([]AnimePerson, error) {
 	persons, err := get_birthday_list_from_html(month, day)
 
 	if err != nil {
