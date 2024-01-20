@@ -2,8 +2,9 @@ package main
 
 import (
 	"AnimeBirthday/birthday"
-	"github.com/gofiber/fiber/v3"
 	"strconv"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 type ReturnMsg struct {
@@ -38,7 +39,14 @@ func main() {
 			return c.JSON(returnMeg)
 		}
 
-		persons := birthday.GetAnimePersonBirthday(month, day)
+		persons, err := birthday.GetAnimePersonBirthday(month, day)
+
+		if err != nil {
+			returnMeg.Code = 500
+			returnMeg.Msg = "Error: " + err.Error()
+
+			return c.JSON(returnMeg)
+		}
 
 		birthday.PrintPersons(persons)
 

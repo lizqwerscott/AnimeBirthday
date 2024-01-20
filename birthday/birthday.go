@@ -3,6 +3,7 @@ package birthday
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"net/http"
@@ -23,106 +24,116 @@ type AnimePerson struct {
 }
 
 func PrintPersons(x []AnimePerson) {
-	fmt.Printf("len=%d cap=%d\n", len(x), cap(x))
+	log.Printf("len=%d cap=%d\n", len(x), cap(x))
 
 	for i, person := range x {
-		fmt.Printf("person(%d): %s %s %d\n", i, person.Name, person.Url, person.Reputation)
+		log.Printf("person(%d): %s %s %d\n", i, person.Name, person.Url, person.Reputation)
 	}
 }
 
-func get_birthday_list_from_html(month, day int) (value []AnimePerson) {
+func get_birthday_list_from_html(month, day int) ([]AnimePerson, error) {
 
 	get_birthday_url := fmt.Sprintf("https://zh.moegirl.org.cn/Category:%d月%d日", month, day)
 
 	resp, err := http.Get(get_birthday_url)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "get birthday list from html error with month: %d, day: %d", month, day)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", resp.StatusCode, resp.Status)
+		return nil, errors.Wrapf(errors.Errorf("status code error: %d %s", resp.StatusCode, resp.Status), "get birthday list from html error with month: %d, day: %d", month, day)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrapf(err, "get birthday list from html error with month: %d, day: %d", month, day)
 	}
 
-	var persons []AnimePerson
+	persons := make([]AnimePerson, 0)
+
+	not_found_person := make([]string, 0)
 
 	doc.Find(".mw-category-group").Each(func(i int, s *goquery.Selection) {
-		// title := s.Find("h3").Text()
-		// fmt.Printf("category group(%d): %s\n", i, title)
-
 		s.Find("a").Each(func(person_i int, person_li *goquery.Selection) {
 			href, err := person_li.Attr("href")
 			name := person_li.Text()
 
-			if err {
-				url := fmt.Sprintf("https://zh.moegirl.org.cn%s", href)
-
-				// fmt.Printf("person (%d) (%s): %s\n", i, name, url)
-				birthday := Birthday{month, day}
-				person := AnimePerson{name, url, birthday, 0}
-				persons = append(persons, person)
+			if !err {
+				not_found_person = append(not_found_person, name)
 			}
+
+			url := fmt.Sprintf("https://zh.moegirl.org.cn%s", href)
+			birthday := Birthday{month, day}
+			person := AnimePerson{name, url, birthday, 0}
+			persons = append(persons, person)
 		})
 	})
 
-	return persons
+	if len(not_found_person) > 0 {
+		return nil, errors.Wrapf(errors.Errorf("not find href with %v", not_found_person), "get birthday list from html error with month: %d, day: %d", month, day)
+	}
+
+	return persons, nil
 }
 
-func count_page_word(url string) int {
+func count_page_word(url string) (int, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
-		return -1
+		return -1, errors.Wrapf(err, "count page (%s) error", url)
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		log.Fatalf("count page (%s) status code error: %d %s", url, resp.StatusCode, resp.Status)
-		return -1
+		return -1, errors.Wrapf(errors.Errorf("status code error: %d %s", resp.StatusCode, resp.Status), "count page (%s) error", url)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Fatal(err)
-		return -1
+		return -1, errors.Wrapf(err, "count page (%s) error", url)
 	}
 
-	return len(body)
+	return len(body), nil
 }
 
-func count_page_word_async(url string, ch chan<- int) {
+func count_page_word_async(url string, ch chan<- int, err_ch chan<- error) {
 	start := time.Now()
 
-	count := count_page_word(url)
+	count, err := count_page_word(url)
 
 	ch <- count
+	err_ch <- err
 
 	end := time.Now()
 	elapse := end.Sub(start)
-	fmt.Printf("count page Seconds: %f, (%s) \n", elapse.Seconds(), url)
+	log.Printf("count page Seconds: %f, (%s) \n", elapse.Seconds(), url)
 }
 
-func GetAnimePersonBirthday(month, day int) []AnimePerson {
-	persons := get_birthday_list_from_html(month, day)
+func GetAnimePersonBirthday(month, day int) ([]AnimePerson, error) {
+	persons, err := get_birthday_list_from_html(month, day)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
+	}
 
 	ch := make(chan int, len(persons))
+	err_ch := make(chan error, len(persons))
 
 	for _, person := range persons {
-		go count_page_word_async(person.Url, ch)
+		go count_page_word_async(person.Url, ch, err_ch)
 	}
 
 	for i := range persons {
 		persons[i].Reputation = <-ch
+		err = <-err_ch
+		if err != nil {
+			return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
+		}
 	}
 
 	sort.SliceStable(persons, func(i, j int) bool {
 		return persons[i].Reputation > persons[j].Reputation
 	})
 
-	return persons
+	return persons, nil
 }
