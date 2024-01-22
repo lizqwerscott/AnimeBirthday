@@ -6,15 +6,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
+	"time"
 )
 
 type AnimeBirthdayModel struct {
-	Birthday string        `bson:"birthday"`
-	Persons  []AnimePerson `bson:"persons"`
+	Birthday   Birthday      `bson:"birthday"`
+	Persons    []AnimePerson `bson:"persons"`
+	LastUpdate int64         `bson:"last_update"`
 }
 
-func initMongoDB() (*qmgo.QmgoClient, context.Context) {
+func initMongoDB() (*qmgo.QmgoClient, context.Context, error) {
 	ctx := context.Background()
 
 	cred := qmgo.Credential{
@@ -27,46 +28,71 @@ func initMongoDB() (*qmgo.QmgoClient, context.Context) {
 
 	cli, err := qmgo.Open(ctx, &conf)
 
-	// defer func() {
-	// 	if err = cli.Close(ctx); err != nil {
-	// 		log.Fatal(err)
-	// 		panic(err)
-	// 	}
-	// }()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return cli, ctx
+	return cli, ctx, errors.Wrap(err, "init mongodb error")
 }
 
 func GetAnimePersonBirthdayFromDatabase(month, day int) ([]AnimePerson, error) {
-	cli, ctx := initMongoDB()
+	cli, ctx, err := initMongoDB()
 
-	birthday := fmt.Sprintf("%d-%d", month, day)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Get anime person birthday from database with month: %d, day: %d", month, day)
+	}
 
 	anime_persons := AnimeBirthdayModel{}
 
-	cli.Find(ctx, bson.M{"birthday": birthday}).One(&anime_persons)
+	cli.Find(ctx, bson.M{"birthday": Birthday{Month: month, Day: day}}).One(&anime_persons)
 
-	// fmt.Printf("get from database: %v\n", anime_persons)
+	fmt.Printf("get from database: %v\n", anime_persons)
 
 	return anime_persons.Persons, nil
 }
 
+func GetAllAnimePersonBirthdayFromDatabase() ([]AnimeBirthdayModel, error) {
+	cli, ctx, err := initMongoDB()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Get all anime person birthday from database error")
+	}
+
+	anime_birthdays := []AnimeBirthdayModel{}
+
+	cli.Find(ctx, bson.M{}).All(&anime_birthdays)
+
+	// fmt.Printf("get from database: %v\n", anime_persons)
+
+	return anime_birthdays, nil
+}
+
 func InsertAnimePersonBirthdayToDatabase(month, day int, persons []AnimePerson) error {
-	cli, ctx := initMongoDB()
+	cli, ctx, err := initMongoDB()
 
-	birthday := fmt.Sprintf("%d-%d", month, day)
+	if err != nil {
+		return errors.Wrapf(err, "insert anime person birthday to database error with month: %d, day: %d", month, day)
+	}
 
-	anime_persons := AnimeBirthdayModel{Birthday: birthday, Persons: persons}
+	anime_persons := AnimeBirthdayModel{Birthday: Birthday{Month: month, Day: day}, Persons: persons, LastUpdate: time.Now().Unix()}
 
-	// fmt.Printf("anime_persons: %v\n", anime_persons)
+	_, errInsert := cli.InsertOne(ctx, anime_persons)
 
-	_, err := cli.InsertOne(ctx, anime_persons)
+	if errInsert != nil {
+		return errors.Wrapf(errInsert, "insert anime person birthday to database error with month: %d, day: %d", month, day)
+	}
 
-	// fmt.Printf("insert to database: %v\n", result)
+	return nil
+}
 
-	return errors.Wrapf(err, "insert anime person birthday to database error with month: %d, day: %d", month, day)
+func UpdateAnimePersonBirthdayToDatabase(month, day int, persons []AnimePerson) error {
+	cli, ctx, err := initMongoDB()
+
+	if err != nil {
+		return errors.Wrapf(err, "update anime person birthday to database error with month: %d, day: %d", month, day)
+	}
+
+	errUpdate := cli.UpdateOne(ctx, bson.M{"birthday": Birthday{Month: month, Day: day}}, bson.M{"$set": bson.M{"persons": persons, "last_update": time.Now().Unix()}})
+
+	if errUpdate != nil {
+		return errors.Wrapf(errUpdate, "update anime person birthday to database error with month: %d, day: %d", month, day)
+	}
+
+	return nil
 }
