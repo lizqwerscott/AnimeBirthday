@@ -1,0 +1,9 @@
+[server_config]
+    port = 22400
+[db_config]
+    url      = "mongodb://localhost:27017"
+    database = "AnimeBirthday"
+    coll     = "animebirthdays"
+    user     = "animebirthday"
+    pass     = "123456"
+    source   = "AnimeBirthday"

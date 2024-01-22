@@ -1,6 +1,7 @@
 package birthday
 
 import (
+	"AnimeBirthday/config"
 	"context"
 	"time"
 
@@ -16,15 +17,23 @@ type AnimeBirthdayModel struct {
 }
 
 func initMongoDB() (*qmgo.QmgoClient, context.Context, error) {
+
+	config := config.LoadConfig()
+
 	ctx := context.Background()
 
 	cred := qmgo.Credential{
-		Username:   "animebirthday",
-		Password:   "12138",
-		AuthSource: "AnimeBirthday",
+		Username:   config.DBConfig.User,
+		Password:   config.DBConfig.Pass,
+		AuthSource: config.DBConfig.Source,
 	}
 
-	conf := qmgo.Config{Uri: "mongodb://192.168.3.14:27017", Database: "AnimeBirthday", Coll: "animebirthdays", Auth: &cred}
+	conf := qmgo.Config{
+		Uri: config.DBConfig.Url,
+		Database: config.DBConfig.Database,
+		Coll: config.DBConfig.Coll,
+		Auth: &cred,
+	}
 
 	cli, err := qmgo.Open(ctx, &conf)
 

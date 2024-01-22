@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
 
 	"AnimeBirthday/birthday"
+	"AnimeBirthday/config"
 	"AnimeBirthday/tasks"
 )
 
@@ -17,6 +19,11 @@ type ReturnMsg struct {
 }
 
 func main() {
+
+	config := config.LoadConfig()
+
+	log.Info("Server start...")
+	log.Infof("config load: %v\n", config)
 
 	app := fiber.New()
 
@@ -33,7 +40,7 @@ func main() {
 	// 后台任务：每天定时更新缓存
 	go tasks.ScheduleDailyCacheUpdate()
 
-	app.Listen(":22400")
+	app.Listen(fmt.Sprintf(":%d", config.ServerConfig.Port))
 }
 
 func getAnimeBirthday(c fiber.Ctx) error {
