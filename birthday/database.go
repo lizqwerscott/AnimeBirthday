@@ -2,11 +2,11 @@ package birthday
 
 import (
 	"context"
-	"fmt"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 type AnimeBirthdayModel struct {
@@ -42,7 +42,7 @@ func GetAnimePersonBirthdayFromDatabase(month, day int) ([]AnimePerson, error) {
 
 	cli.Find(ctx, bson.M{"birthday": Birthday{Month: month, Day: day}}).One(&anime_persons)
 
-	fmt.Printf("get from database: %v\n", anime_persons)
+	// fmt.Printf("get from database: %v\n", anime_persons)
 
 	return anime_persons.Persons, nil
 }

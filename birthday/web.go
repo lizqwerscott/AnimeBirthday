@@ -168,7 +168,9 @@ func GetAnimePersonBirthdayFromWebSlow(month, day int) ([]AnimePerson, error) {
 		return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
 	}
 
-	for _, person := range persons {
+	for i := range persons {
+		person := &persons[i]
+
 		count, err := count_page_word(person.Url)
 
 		if err != nil {
