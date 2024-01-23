@@ -42,8 +42,8 @@ func CheckWeekBirthdayCache() error {
 			return errors.Wrapf(err, "check week birthday cache error with month: %d, day: %d", day.Month, day.Day)
 		}
 
-		// 生成在区间[5, 10]之间的随机整数
-		randomNumber := rng.Intn(6) + 5
+		// 生成在区间 [10, 20] 之间的随机整数
+		randomNumber := rand.Intn(11) + 10
 
 		log.Infof("Sleep %d seconds\n", randomNumber)
 		time.Sleep(time.Duration(randomNumber) * time.Second)

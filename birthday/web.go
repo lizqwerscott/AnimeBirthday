@@ -33,7 +33,7 @@ func PrintPersons(x []AnimePerson) {
 }
 
 func httpGet(url string) (*http.Response, error) {
-	client := &http.Client{}
+	client := &http.Client{ Timeout: 10 * time.Second }
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -122,6 +122,13 @@ func count_page_word_async(url string, ch chan<- int, err_ch chan<- error) {
 
 	count, err := count_page_word(url)
 
+	if err != nil {
+		count2, err2 := count_page_word(url)
+
+		count = count2
+		err = err2
+	}
+
 	ch <- count
 	err_ch <- err
 
@@ -162,7 +169,7 @@ func GetAnimePersonBirthdayFromWeb(month, day int) ([]AnimePerson, error) {
 func GetAnimePersonBirthdayFromWebSlow(month, day int) ([]AnimePerson, error) {
 	persons, err := get_birthday_list_from_html(month, day)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
@@ -174,12 +181,21 @@ func GetAnimePersonBirthdayFromWebSlow(month, day int) ([]AnimePerson, error) {
 		count, err := count_page_word(person.Url)
 
 		if err != nil {
-			return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
+			time.Sleep(1 * time.Second)
+
+			count2, err2 := count_page_word(person.Url)
+
+			if err2 != nil {
+				return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
+			}
+
+			person.Reputation = count2
+		} else {
+			person.Reputation = count
 		}
 
-		person.Reputation = count
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	sort.SliceStable(persons, func(i, j int) bool {

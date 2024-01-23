@@ -82,17 +82,13 @@ func getAnimeBirthday(c fiber.Ctx) error {
 }
 
 func checkWeekCache(c fiber.Ctx) error {
-	err := tasks.CheckWeekBirthdayCache()
+	go tasks.CheckWeekBirthdayCache()
 
-	if err != nil {
-		return c.SendString("Error: " + err.Error())
-	}
-
-	return c.SendString("Check week cache success")
+	return c.SendString("Start check week cache")
 }
 
 func checkAllCache(c fiber.Ctx) error {
-	tasks.CheckAllBirthdayCacheNeedUpdate()
+	go tasks.CheckAllBirthdayCacheNeedUpdate()
 
-	return c.SendString("Check all cache success")
+	return c.SendString("start check all cache")
 }

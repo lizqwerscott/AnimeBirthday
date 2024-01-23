@@ -2,6 +2,7 @@ package birthday
 
 import (
 	"github.com/pkg/errors"
+	"github.com/gofiber/fiber/v3/log"
 )
 
 func GetAnimePersonBirthday(month, day int) ([]AnimePerson, error) {
@@ -14,6 +15,8 @@ func GetAnimePersonBirthday(month, day int) ([]AnimePerson, error) {
 	if len(persons) > 0 {
 		return persons, nil
 	} else {
+		log.Infof("Get anime person birthday from web(slow) with month: %d, day: %d", month, day)
+
 		persons, err := GetAnimePersonBirthdayFromWebSlow(month, day)
 
 		if err != nil {
