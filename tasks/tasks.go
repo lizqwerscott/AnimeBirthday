@@ -43,7 +43,7 @@ func CheckWeekBirthdayCache() error {
 		}
 
 		// 生成在区间 [10, 20] 之间的随机整数
-		randomNumber := rand.Intn(11) + 10
+		randomNumber := rng.Intn(11) + 10
 
 		log.Infof("Sleep %d seconds\n", randomNumber)
 		time.Sleep(time.Duration(randomNumber) * time.Second)
