@@ -175,6 +175,10 @@ func GetAnimePersonBirthdayFromWebSlow(month, day int) ([]AnimePerson, error) {
 		return nil, errors.Wrapf(err, "Get Anime Person Birthday error with month: %d, day: %d", month, day)
 	}
 
+	if len(persons) == 0 {
+		return nil, errors.Wrapf(errors.Errorf("persons is empty"), "Get Anime Person Birthday error with month: %d, day: %d", month, day)
+	}
+
 	for i := range persons {
 		person := &persons[i]
 

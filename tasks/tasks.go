@@ -39,7 +39,15 @@ func CheckWeekBirthdayCache() error {
 		_, err := birthday.GetAnimePersonBirthday(day.Month, day.Day)
 
 		if err != nil {
-			return errors.Wrapf(err, "check week birthday cache error with month: %d, day: %d", day.Month, day.Day)
+			err_get := errors.Wrapf(err, "check week birthday cache error with month: %d, day: %d", day.Month, day.Day)
+
+			log.Errorf("%v", err_get)
+			log.Infof("retry: %d, %d", day.Month, day.Day)
+
+			_, err2 := birthday.GetAnimePersonBirthday(day.Month, day.Day)
+			if err2 != nil {
+				log.Errorf("retry error: %v", err2)
+			}
 		}
 
 		// 生成在区间 [10, 20] 之间的随机整数
