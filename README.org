@@ -2,3 +2,37 @@
 这是一个获取动漫人物的 API.
 
 目前使用的是萌娘百科的数据.
+** install mongodb
+#+begin_src yaml-ts
+  services:
+    mongo:
+      image: mongo
+      restart: always
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: example
+      ports:
+        - "27017:27017"
+      volumes:
+        - ./database:/data/db
+#+end_src
+*** connect
+**** common
+#+begin_src bash
+  mongosh "mongodb://root:example@ip:27017/"
+#+end_src
+**** use sepical user
+#+begin_src bash
+  mongosh "mongodb://animebirthday:12138@ip:27017/?authSource=AnimeBirthday"
+#+end_src
+*** create user
+#+begin_src bash
+  use AnimeBirthday
+
+  db.createUser(
+  {
+      user:"animebirthday",
+      pwd: passwordPrompt(),
+      roles: [{role:"readWrite",db:"AnimeBirthday"}],
+  })
+#+end_src
